@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="google-site-verification" content="">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Woodoku – Play Free Online Wood Block Puzzle</title>
+<meta name="description" content="Play Woodoku free online. Place wooden block shapes on a 9×9 grid, clear rows, columns and 3×3 regions to score. No download, play in your browser.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://puzzlemindgames.github.io/woodoku/">
+<meta property="og:title" content="Woodoku – Free Online Wood Block Puzzle Game">
+<meta property="og:description" content="Place wooden blocks on the 9×9 grid. Clear rows, columns, and 3×3 boxes. Free browser game.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://puzzlemindgames.github.io/woodoku/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Woodoku – Free Online Wood Block Puzzle">
+<meta name="twitter:description" content="Place wooden block shapes, clear lines and 3×3 regions. Play free in your browser.">
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"WebApplication",
+  "name":"Woodoku",
+  "description":"Free online wood block puzzle game. Place shapes on a 9×9 grid, clear rows, columns, and 3×3 regions.",
+  "applicationCategory":"Game",
+  "operatingSystem":"Any",
+  "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}
+}
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  background:#1a1008;
+  color:#e8dcc8;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ===== HEADER ===== */
+.site-header{
+  background:linear-gradient(135deg,#1a1008 0%,#2d1f0e 50%,#1a1008 100%);
+  border-bottom:1px solid rgba(184,142,74,.25);
+  padding:10px 24px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  position:relative;overflow:hidden;
+}
+.site-header::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,#b88e4a,#d4a853,#b88e4a,transparent);
+}
+.site-header .logo{
+  font-size:24px;font-weight:800;
+  background:linear-gradient(135deg,#d4a853,#b88e4a,#e8c876);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  letter-spacing:-.5px;
+}
+.site-header .logo-icon{width:28px;height:28px;border-radius:5px;filter:drop-shadow(0 0 6px rgba(184,142,74,.4));}
+
+/* ===== MAIN CONTAINER ===== */
+.container{max-width:960px;margin:0 auto;padding:10px 16px;}
+
+.hero-text{text-align:center;margin-bottom:8px;}
+.hero-text h1{
+  font-size:clamp(1.2rem,3vw,1.7rem);font-weight:800;
+  background:linear-gradient(135deg,#e8dcc8,#d4a853);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:3px;
+}
+.hero-text p{color:#a89070;font-size:13px;max-width:580px;margin:0 auto;line-height:1.5;}
+
+/* ===== GAME AREA ===== */
+.game-wrapper{
+  background:linear-gradient(145deg,rgba(45,31,14,.6),rgba(26,16,8,.8));
+  border:1px solid rgba(184,142,74,.15);
+  border-radius:14px;padding:12px 14px;
+  backdrop-filter:blur(10px);margin-bottom:18px;
+  box-shadow:0 6px 30px rgba(0,0,0,.5);
+}
+
+/* Score bar */
+.score-bar{
+  display:flex;align-items:center;justify-content:center;
+  gap:14px;margin-bottom:8px;flex-wrap:wrap;
+}
+.score-box{
+  background:rgba(184,142,74,.08);border:1px solid rgba(184,142,74,.18);
+  border-radius:8px;padding:5px 14px;text-align:center;min-width:90px;
+}
+.score-box .label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#b88e4a;font-weight:600;}
+.score-box .value{font-size:18px;font-weight:800;color:#e8dcc8;margin-top:1px;}
+
+.combo-toast{
+  position:fixed;top:20%;left:50%;transform:translateX(-50%);
+  font-size:26px;font-weight:800;
+  background:linear-gradient(135deg,#d4a853,#e8c876);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  opacity:0;pointer-events:none;transition:opacity .3s,top .5s;z-index:100;
+}
+.combo-toast.show{opacity:1;top:16%;}
+
+/* Board */
+.board{
+  display:grid;
+  grid-template-columns:repeat(9,1fr);
+  gap:1px;max-width:340px;margin:0 auto 10px;
+  background:rgba(26,16,8,.7);border-radius:10px;padding:4px;
+  border:1px solid rgba(184,142,74,.12);
+}
+.cell{
+  aspect-ratio:1;
+  background:linear-gradient(145deg,#2a1e0f,#1f150a);
+  border-radius:3px;
+  transition:background .15s,transform .15s,box-shadow .15s;
+  position:relative;
+}
+/* 3x3 sub-grid borders */
+.cell[data-c="2"],.cell[data-c="5"]{border-right:2px solid rgba(184,142,74,.15);}
+.cell[data-r="2"],.cell[data-r="5"]{border-bottom:2px solid rgba(184,142,74,.15);}
+
+.cell.filled{border-radius:4px;box-shadow:inset 0 -2px 4px rgba(0,0,0,.35),0 1px 3px rgba(0,0,0,.25);}
+.cell.preview{background:rgba(212,168,83,.25)!important;box-shadow:0 0 10px rgba(212,168,83,.15);}
+.cell.invalid-preview{background:rgba(180,60,40,.2)!important;box-shadow:0 0 6px rgba(180,60,40,.12);}
+.cell.clearing{animation:clearPop .4s ease forwards;}
+
+@keyframes clearPop{
+  0%{transform:scale(1);opacity:1;}
+  50%{transform:scale(1.12);opacity:.6;}
+  100%{transform:scale(0);opacity:0;}
+}
+
+/* Pieces tray */
+.pieces-tray{
+  display:flex;justify-content:center;align-items:center;
+  gap:10px;flex-wrap:wrap;min-height:62px;
+}
+.piece-slot{
+  background:rgba(45,31,14,.35);border:1px solid rgba(184,142,74,.1);
+  border-radius:8px;padding:6px;min-width:54px;min-height:54px;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .2s,box-shadow .2s,opacity .3s;
+}
+.piece-slot:hover{border-color:rgba(184,142,74,.25);box-shadow:0 0 12px rgba(184,142,74,.08);}
+.piece-slot.used{opacity:.12;pointer-events:none;}
+
+.piece{display:grid;gap:1px;cursor:grab;transition:transform .15s;}
+.piece:active{cursor:grabbing;transform:scale(1.05);}
+.piece .block{
+  width:16px;height:16px;border-radius:3px;
+  box-shadow:inset 0 -2px 3px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.2);
+}
+
+/* Wood piece colors */
+.color-0 .block{background:linear-gradient(145deg,#c4883a,#a06b28);}
+.color-0.filled{background:linear-gradient(145deg,#c4883a,#a06b28);}
+.color-1 .block{background:linear-gradient(145deg,#8b5e34,#6d4824);}
+.color-1.filled{background:linear-gradient(145deg,#8b5e34,#6d4824);}
+.color-2 .block{background:linear-gradient(145deg,#d4a853,#b88e4a);}
+.color-2.filled{background:linear-gradient(145deg,#d4a853,#b88e4a);}
+.color-3 .block{background:linear-gradient(145deg,#9e6b3a,#7a5228);}
+.color-3.filled{background:linear-gradient(145deg,#9e6b3a,#7a5228);}
+.color-4 .block{background:linear-gradient(145deg,#e8c876,#c4a04a);}
+.color-4.filled{background:linear-gradient(145deg,#e8c876,#c4a04a);}
+.color-5 .block{background:linear-gradient(145deg,#6b4420,#4d3018);}
+.color-5.filled{background:linear-gradient(145deg,#6b4420,#4d3018);}
+.color-6 .block{background:linear-gradient(145deg,#b07840,#8c5c2e);}
+.color-6.filled{background:linear-gradient(145deg,#b07840,#8c5c2e);}
+
+/* Buttons */
+.game-btn{
+  padding:7px 20px;border:none;border-radius:7px;
+  font-family:inherit;font-size:12px;font-weight:700;
+  cursor:pointer;transition:transform .15s,box-shadow .2s;
+  text-transform:uppercase;letter-spacing:.5px;
+}
+.game-btn:hover{transform:translateY(-1px);box-shadow:0 3px 12px rgba(0,0,0,.3);}
+.game-btn:active{transform:translateY(0);}
+.btn-restart{background:linear-gradient(135deg,#b88e4a,#9a7438);color:#1a1008;margin-top:8px;}
+
+.btn-play{background:linear-gradient(135deg,#d4a853,#b88e4a);color:#1a1008;font-size:15px;padding:12px 32px;}
+
+/* Game Over Modal */
+.modal-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;z-index:200;
+}
+.modal-overlay.active{display:flex;}
+.modal{
+  background:linear-gradient(145deg,#2d1f0e,#1a1008);
+  border:1px solid rgba(184,142,74,.25);border-radius:20px;
+  padding:36px;text-align:center;max-width:340px;width:90%;
+  box-shadow:0 16px 50px rgba(0,0,0,.6);animation:modalIn .3s ease;
+}
+@keyframes modalIn{from{transform:scale(.9);opacity:0;}to{transform:scale(1);opacity:1;}}
+.modal h2{font-size:26px;font-weight:800;color:#d4a853;margin-bottom:8px;}
+.modal .final-score{font-size:44px;font-weight:800;color:#e8dcc8;margin:10px 0;}
+.modal .best{font-size:13px;color:#b88e4a;margin-bottom:20px;}
+
+/* ===== CONTENT SECTIONS ===== */
+.content-section{
+  background:linear-gradient(145deg,rgba(45,31,14,.25),rgba(26,16,8,.5));
+  border:1px solid rgba(184,142,74,.1);border-radius:14px;
+  padding:26px 22px;margin-bottom:20px;
+}
+.content-section h2{
+  font-size:19px;font-weight:700;color:#d4a853;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+.content-section h2 .icon{font-size:20px;}
+.content-section p{color:#a89070;line-height:1.65;margin-bottom:10px;font-size:14px;}
+.content-section ul{list-style:none;padding:0;margin:0 0 10px;}
+.content-section ul li{
+  padding:6px 0 6px 24px;position:relative;color:#a89070;line-height:1.55;font-size:14px;
+}
+.content-section ul li::before{content:'▸';position:absolute;left:6px;color:#b88e4a;font-weight:bold;}
+.content-section h3{color:#c4a04a;font-size:15px;margin:14px 0 8px;font-weight:600;}
+.content-section a{color:#d4a853;text-decoration:none;font-weight:600;}
+.content-section a:hover{text-decoration:underline;}
+
+/* ===== FOOTER ===== */
+.site-footer{
+  background:linear-gradient(135deg,#1a1008,#2d1f0e);
+  border-top:1px solid rgba(184,142,74,.12);
+  padding:22px 24px;text-align:center;
+}
+.site-footer p{color:#6b5a42;font-size:12px;line-height:1.6;}
+.site-footer a{color:#b88e4a;text-decoration:none;}
+.site-footer a:hover{color:#d4a853;text-decoration:underline;}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:520px){
+  .board{gap:1px;padding:3px;max-width:92vw;}
+  .piece .block{width:14px;height:14px;}
+  .piece-slot{padding:5px;min-width:48px;min-height:48px;}
+  .score-bar{gap:10px;}
+  .score-box{padding:4px 10px;min-width:80px;}
+  .score-box .value{font-size:16px;}
+  .content-section{padding:20px 16px;}
+}
+.drag-ghost{position:absolute;top:-9999px;left:-9999px;}
+</style>
+</head>
+
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+  <svg class="logo-icon" width="28" height="28" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#2d1f0e"/><rect x="2" y="2" width="13" height="13" rx="3" fill="#c4883a"/><rect x="17" y="2" width="13" height="13" rx="3" fill="#8b5e34"/><rect x="2" y="17" width="13" height="13" rx="3" fill="#d4a853"/><rect x="17" y="17" width="13" height="13" rx="3" fill="#9e6b3a"/></svg>
+  <span class="logo">Woodoku</span>
+</header>
+
+<!-- ===== MAIN ===== -->
+<main class="container">
+
+  <section class="hero-text">
+    <h1>Play Woodoku Online</h1>
+    <p>Place wooden blocks on the 9×9 board. Clear rows, columns, and 3×3 regions to score points.</p>
+  </section>
+
+  <!-- Game Area -->
+  <section class="game-wrapper">
+
+    <div class="score-bar">
+      <div class="score-box"><div class="label">Score</div><div class="value" id="score">0</div></div>
+      <div class="score-box"><div class="label">Best</div><div class="value" id="best">0</div></div>
+    </div>
+
+    <div id="board" class="board" role="grid"></div>
+    <div id="pieces" class="pieces-tray"></div>
+
+    <div style="text-align:center;">
+      <button class="game-btn btn-restart" id="restartBtn" onclick="restart()">↻ Restart</button>
+    </div>
+
+  </section>
+
+  <div class="combo-toast" id="comboToast"></div>
+
+  <!-- ===== CONTENT: GAME BASICS ===== -->
+  <section class="content-section">
+    <h2><span class="icon">🪵</span> Woodoku Game Basics</h2>
+    <p>
+      Woodoku is a wood-themed grid puzzle that blends the classic block-fitting gameplay
+      with Sudoku-style 3×3 region clearing. The board is a 9×9 grid divided into nine smaller
+      3×3 boxes, giving you three ways to clear and score.
+    </p>
+    <h3>How to Play</h3>
+    <ul>
+      <li>Each round gives you <strong style="color:#e8dcc8;">3 wooden pieces</strong> of random shapes.</li>
+      <li>Drag a piece onto the 9×9 grid to place it in an open position.</li>
+      <li>You must place <strong style="color:#e8dcc8;">all 3 pieces</strong> before new ones appear.</li>
+      <li>Completing a full <strong style="color:#e8dcc8;">row, column, or 3×3 region</strong> clears it from the board.</li>
+      <li>Clear multiple lines or regions at once for a <strong style="color:#e8dcc8;">combo bonus</strong>.</li>
+      <li>The game ends when no remaining piece fits anywhere on the board.</li>
+    </ul>
+    <h3>Strategy Tips</h3>
+    <ul>
+      <li>Think about all three pieces before placing the first one.</li>
+      <li>Prioritise completing 3×3 regions — they free up concentrated space quickly.</li>
+      <li>Avoid building isolated clusters in corners where pieces get trapped.</li>
+      <li>Set up multi-clear combos by nearly completing several lines at once.</li>
+    </ul>
+    <p>
+      Enjoy other grid puzzles? Try <a href="https://puzzlemindgames.github.io/blockblastonline/">Block Blast Mini</a> — an 8×8 block puzzle with row and column clearing.
+    </p>
+  </section>
+
+  <!-- ===== CONTENT: AI SOLVER ===== -->
+  <section class="content-section">
+    <h2><span class="icon">🧠</span> AI Puzzle Solver Tools</h2>
+    <p>
+      Grid puzzle games like Woodoku get progressively harder as the board fills up.
+      What starts as easy placement quickly becomes a challenge where a single wrong move
+      can leave you stuck with no room for your remaining pieces.
+    </p>
+    <p>
+      This is where AI-powered puzzle solvers can help. These tools analyze the current
+      board state and available pieces, then evaluate thousands of possible placements
+      to recommend the strongest move. Instead of guessing, you get data-backed suggestions
+      that consider line clears, region completions, board openness, and future flexibility.
+    </p>
+    <p>
+      Solvers are especially useful when you find yourself stuck on hard levels
+      where every placement feels risky and one misstep ends the run.
+      Rather than restarting, a solver can identify opportunities you might have missed
+      and help you develop better pattern recognition over time.
+    </p>
+    <p>
+      Whether you use them as a rescue tool or a learning aid, AI solvers are becoming
+      a valuable companion for anyone serious about improving at grid-based puzzle games.
+    </p>
+  </section>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer">
+  <p>Woodoku &copy; 2026 &mdash; A free fan-made wood block puzzle game.</p>
+</footer>
+
+<!-- ===== GAME OVER MODAL ===== -->
+<div class="modal-overlay" id="gameOverModal">
+  <div class="modal">
+    <h2>Game Over!</h2>
+    <div class="final-score" id="finalScore">0</div>
+    <p class="best" id="bestLine">Best: 0</p>
+    <button class="game-btn btn-play" onclick="restart()">▶ Play Again</button>
+  </div>
+</div>
+
+<script>
+/* ========================================
+   WOODOKU – GAME ENGINE
+   9×9 grid, clear rows/cols/3×3 regions
+   ======================================== */
+
+const SIZE = 9;
+const BOX = 3;
+const COLORS = ['color-0','color-1','color-2','color-3','color-4','color-5','color-6'];
+
+const SHAPES = [
+  // Singles
+  [[0,0]],
+  // Horizontal
+  [[0,0],[1,0]],
+  [[0,0],[1,0],[2,0]],
+  [[0,0],[1,0],[2,0],[3,0]],
+  [[0,0],[1,0],[2,0],[3,0],[4,0]],
+  // Vertical
+  [[0,0],[0,1]],
+  [[0,0],[0,1],[0,2]],
+  [[0,0],[0,1],[0,2],[0,3]],
+  [[0,0],[0,1],[0,2],[0,3],[0,4]],
+  // Squares
+  [[0,0],[1,0],[0,1],[1,1]],
+  [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]],
+  // L-shapes
+  [[0,0],[0,1],[1,1]],
+  [[0,0],[1,0],[0,1]],
+  [[0,0],[1,0],[1,1]],
+  [[1,0],[0,1],[1,1]],
+  // Bigger L
+  [[0,0],[0,1],[0,2],[1,2]],
+  [[0,0],[0,1],[0,2],[1,0]],
+  [[0,0],[1,0],[2,0],[2,1]],
+  [[0,0],[1,0],[2,0],[0,1]],
+  // T-shapes
+  [[0,0],[1,0],[2,0],[1,1]],
+  [[0,0],[0,1],[0,2],[1,1]],
+  // S/Z
+  [[0,0],[1,0],[1,1],[2,1]],
+  [[0,1],[1,1],[1,0],[2,0]],
+  // Corner
+  [[0,0],[1,0],[0,1]],
+];
+
+let board = [];
+let score = 0;
+let best = parseInt(localStorage.getItem('woodoku_best')) || 0;
+let roundPieces = [];
+let currentDrag = null;
+
+// ====== INIT ======
+function init() {
+  board = [];
+  for (let r = 0; r < SIZE; r++) board[r] = new Array(SIZE).fill(0);
+  score = 0;
+  updateScoreUI();
+  renderBoard();
+  spawnPieces();
+}
+
+// ====== BOARD ======
+function renderBoard() {
+  const el = document.getElementById('board');
+  el.innerHTML = '';
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      if (board[r][c]) cell.classList.add('filled', COLORS[board[r][c] - 1]);
+      cell.addEventListener('dragover', onDragOver);
+      cell.addEventListener('dragleave', onDragLeave);
+      cell.addEventListener('drop', onDrop);
+      el.appendChild(cell);
+    }
+  }
+}
+
+function refreshBoard() {
+  document.querySelectorAll('.cell').forEach(cell => {
+    const r = parseInt(cell.dataset.r);
+    const c = parseInt(cell.dataset.c);
+    cell.className = 'cell';
+    if (c === 2 || c === 5) cell.style.borderRight = '2px solid rgba(184,142,74,.15)';
+    else cell.style.borderRight = '';
+    if (r === 2 || r === 5) cell.style.borderBottom = '2px solid rgba(184,142,74,.15)';
+    else cell.style.borderBottom = '';
+    if (board[r][c]) cell.classList.add('filled', COLORS[board[r][c] - 1]);
+  });
+}
+
+// ====== SCORE ======
+function updateScoreUI() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('best').textContent = best;
+}
+
+function saveBest() {
+  if (score > best) { best = score; localStorage.setItem('woodoku_best', best); }
+  updateScoreUI();
+}
+
+// ====== PIECES ======
+function spawnPieces() {
+  roundPieces = [];
+  for (let i = 0; i < 3; i++) {
+    const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    const colorIdx = Math.floor(Math.random() * COLORS.length);
+    roundPieces.push({ shape, colorIdx, used: false });
+  }
+  renderPieces();
+}
+
+function renderPieces() {
+  const tray = document.getElementById('pieces');
+  tray.innerHTML = '';
+  roundPieces.forEach((p, idx) => {
+    const slot = document.createElement('div');
+    slot.className = 'piece-slot' + (p.used ? ' used' : '');
+
+    if (!p.used) {
+      const piece = document.createElement('div');
+      piece.className = 'piece ' + COLORS[p.colorIdx];
+      piece.draggable = true;
+      piece.dataset.idx = idx;
+
+      const maxC = Math.max(...p.shape.map(b => b[0]));
+      const maxR = Math.max(...p.shape.map(b => b[1]));
+      piece.style.gridTemplateColumns = `repeat(${maxC + 1}, 16px)`;
+      piece.style.gridTemplateRows = `repeat(${maxR + 1}, 16px)`;
+
+      for (let r = 0; r <= maxR; r++) {
+        for (let c = 0; c <= maxC; c++) {
+          const div = document.createElement('div');
+          if (p.shape.some(b => b[0] === c && b[1] === r)) {
+            div.className = 'block';
+          } else {
+            div.style.cssText = 'width:16px;height:16px;';
+          }
+          div.style.gridColumn = c + 1;
+          div.style.gridRow = r + 1;
+          piece.appendChild(div);
+        }
+      }
+
+      piece.addEventListener('dragstart', (e) => {
+        currentDrag = { pieceIdx: idx, shape: p.shape, colorIdx: p.colorIdx };
+        const ghost = document.createElement('div');
+        ghost.className = 'drag-ghost';
+        document.body.appendChild(ghost);
+        e.dataTransfer.setDragImage(ghost, 0, 0);
+        setTimeout(() => ghost.remove(), 0);
+        piece.style.opacity = '0.5';
+      });
+      piece.addEventListener('dragend', () => {
+        piece.style.opacity = '1';
+        clearPreview();
+        currentDrag = null;
+      });
+
+      piece.addEventListener('touchstart', onTouchStart, { passive: false });
+      piece.addEventListener('touchmove', onTouchMove, { passive: false });
+      piece.addEventListener('touchend', onTouchEnd, { passive: false });
+
+      slot.appendChild(piece);
+    }
+    tray.appendChild(slot);
+  });
+}
+
+// ====== PLACEMENT ======
+function canPlace(shape, ar, ac) {
+  for (const [dc, dr] of shape) {
+    const nr = ar + dr, nc = ac + dc;
+    if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) return false;
+    if (board[nr][nc]) return false;
+  }
+  return true;
+}
+
+function placeShape(shape, ar, ac, colorIdx) {
+  for (const [dc, dr] of shape) board[ar + dr][ac + dc] = colorIdx + 1;
+  score += shape.length * 10;
+}
+
+function canAnyPieceFit() {
+  for (const p of roundPieces) {
+    if (p.used) continue;
+    for (let r = 0; r < SIZE; r++)
+      for (let c = 0; c < SIZE; c++)
+        if (canPlace(p.shape, r, c)) return true;
+  }
+  return false;
+}
+
+// ====== LINE CLEARING (rows, cols, 3×3 regions) ======
+function clearLines() {
+  let rowsToClear = [];
+  let colsToClear = [];
+  let boxesToClear = [];
+
+  // Check rows
+  for (let r = 0; r < SIZE; r++) {
+    if (board[r].every(v => v)) rowsToClear.push(r);
+  }
+  // Check columns
+  for (let c = 0; c < SIZE; c++) {
+    let full = true;
+    for (let r = 0; r < SIZE; r++) { if (!board[r][c]) { full = false; break; } }
+    if (full) colsToClear.push(c);
+  }
+  // Check 3×3 regions
+  for (let br = 0; br < SIZE; br += BOX) {
+    for (let bc = 0; bc < SIZE; bc += BOX) {
+      let full = true;
+      for (let r = br; r < br + BOX; r++) {
+        for (let c = bc; c < bc + BOX; c++) {
+          if (!board[r][c]) { full = false; break; }
+        }
+        if (!full) break;
+      }
+      if (full) boxesToClear.push([br, bc]);
+    }
+  }
+
+  const totalClears = rowsToClear.length + colsToClear.length + boxesToClear.length;
+  if (totalClears === 0) return;
+
+  const comboMult = totalClears > 1 ? totalClears : 1;
+  score += 100 * totalClears * comboMult;
+
+  if (totalClears > 1) showCombo(totalClears);
+
+  let cellsToClear = new Set();
+  for (const r of rowsToClear) for (let c = 0; c < SIZE; c++) cellsToClear.add(r + ',' + c);
+  for (const c of colsToClear) for (let r = 0; r < SIZE; r++) cellsToClear.add(r + ',' + c);
+  for (const [br, bc] of boxesToClear) {
+    for (let r = br; r < br + BOX; r++)
+      for (let c = bc; c < bc + BOX; c++) cellsToClear.add(r + ',' + c);
+  }
+
+  cellsToClear.forEach(key => {
+    const [r, c] = key.split(',').map(Number);
+    const cell = document.querySelector(`.cell[data-r='${r}'][data-c='${c}']`);
+    if (cell) cell.classList.add('clearing');
+  });
+
+  setTimeout(() => {
+    for (const r of rowsToClear) board[r].fill(0);
+    for (const c of colsToClear) for (let r = 0; r < SIZE; r++) board[r][c] = 0;
+    for (const [br, bc] of boxesToClear) {
+      for (let r = br; r < br + BOX; r++)
+        for (let c = bc; c < bc + BOX; c++) board[r][c] = 0;
+    }
+    refreshBoard();
+  }, 350);
+}
+
+function showCombo(n) {
+  const t = document.getElementById('comboToast');
+  t.textContent = n + 'x Combo! 🔥';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1200);
+}
+
+// ====== GAME OVER ======
+function gameOver() {
+  saveBest();
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('bestLine').textContent = 'Best: ' + best;
+  document.getElementById('gameOverModal').classList.add('active');
+}
+
+function restart() {
+  document.getElementById('gameOverModal').classList.remove('active');
+  saveBest();
+  init();
+}
+
+// ====== DRAG & DROP ======
+function onDragOver(e) {
+  e.preventDefault();
+  if (!currentDrag) return;
+  clearPreview();
+  const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
+  if (isNaN(r) || isNaN(c)) return;
+  const valid = canPlace(currentDrag.shape, r, c);
+  for (const [dc, dr] of currentDrag.shape) {
+    const nr = r + dr, nc = c + dc;
+    if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
+      const cell = document.querySelector(`.cell[data-r='${nr}'][data-c='${nc}']`);
+      if (cell) cell.classList.add(valid ? 'preview' : 'invalid-preview');
+    }
+  }
+}
+
+function onDragLeave() {}
+
+function onDrop(e) {
+  e.preventDefault();
+  if (!currentDrag) return;
+  const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
+  if (isNaN(r) || isNaN(c)) return;
+  if (canPlace(currentDrag.shape, r, c)) {
+    placeShape(currentDrag.shape, r, c, currentDrag.colorIdx);
+    roundPieces[currentDrag.pieceIdx].used = true;
+    clearPreview();
+    refreshBoard();
+    clearLines();
+    updateScoreUI();
+    renderPieces();
+    if (roundPieces.every(p => p.used)) {
+      setTimeout(() => { spawnPieces(); if (!canAnyPieceFit()) gameOver(); }, 400);
+    } else {
+      setTimeout(() => { if (!canAnyPieceFit()) gameOver(); }, 400);
+    }
+  }
+  currentDrag = null;
+  clearPreview();
+}
+
+function clearPreview() {
+  document.querySelectorAll('.cell').forEach(c => c.classList.remove('preview', 'invalid-preview'));
+}
+
+// ====== TOUCH ======
+let touchDrag = null, touchClone = null;
+
+function onTouchStart(e) {
+  e.preventDefault();
+  const piece = e.currentTarget;
+  const idx = parseInt(piece.dataset.idx);
+  const p = roundPieces[idx];
+  touchDrag = { pieceIdx: idx, shape: p.shape, colorIdx: p.colorIdx, el: piece };
+  touchClone = piece.cloneNode(true);
+  touchClone.style.cssText = 'position:fixed;pointer-events:none;z-index:999;opacity:0.8;transform:scale(1.1);';
+  document.body.appendChild(touchClone);
+  positionClone(e.touches[0].clientX, e.touches[0].clientY);
+  piece.style.opacity = '0.3';
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  if (!touchDrag) return;
+  const t = e.touches[0];
+  positionClone(t.clientX, t.clientY);
+  clearPreview();
+  const el = document.elementFromPoint(t.clientX, t.clientY - 60);
+  if (el && el.classList.contains('cell')) {
+    const r = parseInt(el.dataset.r), c = parseInt(el.dataset.c);
+    const valid = canPlace(touchDrag.shape, r, c);
+    for (const [dc, dr] of touchDrag.shape) {
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
+        const cell = document.querySelector(`.cell[data-r='${nr}'][data-c='${nc}']`);
+        if (cell) cell.classList.add(valid ? 'preview' : 'invalid-preview');
+      }
+    }
+    touchDrag.lastR = r;
+    touchDrag.lastC = c;
+  }
+}
+
+function onTouchEnd(e) {
+  e.preventDefault();
+  if (!touchDrag) return;
+  if (touchClone) { touchClone.remove(); touchClone = null; }
+  touchDrag.el.style.opacity = '1';
+  const r = touchDrag.lastR, c = touchDrag.lastC;
+  if (r !== undefined && c !== undefined && canPlace(touchDrag.shape, r, c)) {
+    placeShape(touchDrag.shape, r, c, touchDrag.colorIdx);
+    roundPieces[touchDrag.pieceIdx].used = true;
+    clearPreview(); refreshBoard(); clearLines(); updateScoreUI(); renderPieces();
+    if (roundPieces.every(p => p.used)) {
+      setTimeout(() => { spawnPieces(); if (!canAnyPieceFit()) gameOver(); }, 400);
+    } else {
+      setTimeout(() => { if (!canAnyPieceFit()) gameOver(); }, 400);
+    }
+  } else { clearPreview(); }
+  touchDrag = null;
+}
+
+function positionClone(x, y) {
+  if (!touchClone) return;
+  touchClone.style.left = (x - 30) + 'px';
+  touchClone.style.top = (y - 80) + 'px';
+}
+
+// ====== START ======
+document.getElementById('best').textContent = best;
+init();
+</script>
+
+</body>
+</html>
